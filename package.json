@@ -5,10 +5,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "serve": "vite preview --port 3000"
   },
   "dependencies": {
-    "node-fetch": "^2.6.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

@@ -23,6 +23,7 @@ const getAiResponse = async (userQuery, maxRetries = 2) => {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({ userQuery }) 
             });
@@ -30,7 +31,13 @@ const getAiResponse = async (userQuery, maxRetries = 2) => {
             console.log(`📨 Statut réponse: ${response.status}`);
 
             if (!response.ok) {
-                throw new Error(`Erreur HTTP: ${response.status}`);
+                let errorText;
+                try {
+                    errorText = await response.text();
+                } catch (e) {
+                    errorText = `Erreur HTTP: ${response.status}`;
+                }
+                throw new Error(errorText || `Erreur Serverless: ${response.status}`);
             }
 
             const text = await response.text();
@@ -39,26 +46,22 @@ const getAiResponse = async (userQuery, maxRetries = 2) => {
             if (text && text.trim().length > 0) {
                 return text;
             } else {
-                throw new Error("Réponse vide");
+                throw new Error("Réponse de l'API vide.");
             }
 
         } catch (error) {
             console.error(`❌ Tentative ${attempt + 1} échouée:`, error.message);
             
             if (attempt === maxRetries - 1) {
-                return `🎯 Utilisez le code **${PROMO_CODE}** pour obtenir le bonus maximal ! 
-
-🎰 1xBet: ${AFFILIATE_LINK_1XBET}
-⚽ Melbet: ${AFFILIATE_LINK_MELBET}
-
-💬 Rejoignez-nous: ${WHATSAPP_LINK}`;
+                // Dernière tentative échouée
+                return `🚨 Service temporairement indisponible. \n\n🎯 **Code promo : ${PROMO_CODE}** \n\n🎰 Inscrivez-vous sur 1xBet : ${AFFILIATE_LINK_1XBET} \n⚽ Ou sur Melbet : ${AFFILIATE_LINK_MELBET}`;
             }
             
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Attente progressive
+            await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
         }
     }
 };
-
 // --- Composant Principal de l'Application ---
 const App = () => {
     const [messages, setMessages] = useState([
@@ -81,28 +84,22 @@ const App = () => {
     useEffect(scrollToBottom, [messages]);
 
     const formatMessageText = useCallback((text) => {
-        if (!text) return null;
-        
-        const parts = [];
-        const words = text.split(' ');
-        
-        for (let i = 0; i < words.length; i++) {
-            const word = words[i];
-            
-            // Détection des URLs
-            if (word.startsWith('http') || (i > 0 && words[i-1] === 'http')) {
-                const url = word.startsWith('http') ? word : `${words[i-1]} ${word}`;
-                let display = url;
+        let parts = text.split(/(\s(https?:\/\/[^\s]+))/g);
+        const regexBold = /\*\*(.*?)\*\*/g;
+
+        return parts.map((part, index) => {
+            if (part.startsWith(' https://') || part.startsWith('https://')) {
+                const url = part.trim();
+                let display = url.length > 50 ? url.substring(0, 50) + '...' : url;
                 
-                if (url.includes('1xbet') || url.includes('refpa')) display = "🎰 S'inscrire sur 1xBet";
-                else if (url.includes('melbet')) display = "⚽ S'inscrire sur Melbet";
-                else if (url.includes('whatsapp')) display = "💬 Rejoindre WhatsApp";
-                else if (url.includes('t.me')) display = "📢 Rejoindre Telegram";
-                else display = url.length > 30 ? url.substring(0, 30) + '...' : url;
+                if (url === AFFILIATE_LINK_1XBET) display = "🎰 S'inscrire sur 1xBet";
+                if (url === AFFILIATE_LINK_MELBET) display = "⚽ S'inscrire sur Melbet";
+                if (url === WHATSAPP_LINK) display = "💬 Rejoindre WhatsApp";
+                if (url === TELEGRAM_LINK) display = "📢 Rejoindre Telegram";
                 
-                parts.push(
+                return (
                     <a 
-                        key={i} 
+                        key={index} 
                         href={url} 
                         target="_blank" 
                         rel="noopener noreferrer" 
@@ -111,23 +108,17 @@ const App = () => {
                         {display}
                     </a>
                 );
-            } 
-            // Détection du texte en gras
-            else if (word.includes('**')) {
-                const boldParts = word.split('**');
-                const formatted = boldParts.map((part, j) => {
-                    if (j % 2 === 1) {
-                        return <strong key={j} className="promo-code-bold">{part}</strong>;
-                    }
-                    return part;
-                });
-                parts.push(<span key={i}>{formatted} </span>);
-            } else {
-                parts.push(<span key={i}>{word} </span>);
             }
-        }
-        
-        return parts;
+            
+            const textWithBold = part.split(regexBold).map((subPart, i) => {
+                if (i % 2 === 1) {
+                    return <strong key={i} className="promo-code-bold">{subPart}</strong>;
+                }
+                return subPart;
+            });
+
+            return <span key={index}>{textWithBold}</span>;
+        });
     }, []);
 
     const handleSend = async (e) => {
@@ -151,7 +142,7 @@ const App = () => {
             botResponseText = await getAiResponse(trimmedInput);
         } catch (error) {
             console.error("Erreur de traitement:", error);
-            botResponseText = `🎯 Utilisez le code **${PROMO_CODE}** pour votre bonus ! 🎰 ${AFFILIATE_LINK_1XBET}`;
+            botResponseText = "🚨 Une erreur inattendue est survenue.";
         } finally {
             setIsBotTyping(false);
         }
@@ -195,8 +186,8 @@ const App = () => {
     // --- Rendu de l'interface ---
     return (
         <div className="app-container">
+            {/* Styles CSS */}
             <style jsx="true">{`
-                /* VOTRE CSS EXISTANT - IL EST CORRECT */
                 :root {
                     --color-primary: #f59e0b;
                     --color-secondary: #10b981;
@@ -442,6 +433,47 @@ const App = () => {
                     color: #1e293b;
                     border: none;
                     cursor: pointer;
+                }
+
+                .footer-links {
+                    position: absolute;
+                    bottom: 16px;
+                    right: 16px;
+                    display: flex;
+                    gap: 16px;
+                    align-items: center;
+                    background: rgba(30, 41, 59, 0.9);
+                    padding: 12px 20px;
+                    border-radius: 16px;
+                }
+
+                .footer-link {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    text-decoration: none;
+                    color: var(--color-text-light);
+                    font-weight: 600;
+                    font-size: 13px;
+                    padding: 8px 16px;
+                    border-radius: 10px;
+                }
+
+                .footer-link.whatsapp {
+                    background: rgba(37, 211, 102, 0.1);
+                }
+
+                .footer-link.telegram {
+                    background: rgba(0, 136, 204, 0.1);
+                }
+
+                .promo-badge {
+                    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+                    color: #1e293b;
+                    padding: 6px 12px;
+                    border-radius: 8px;
+                    font-weight: 800;
+                    font-size: 12px;
                 }
 
                 @media (max-width: 768px) {
