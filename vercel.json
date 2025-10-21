@@ -6,7 +6,7 @@
       "use": "@vercel/node"
     },
     {
-      "src": "vite.config.js",
+      "src": "package.json",
       "use": "@vercel/static-build"
     }
   ],
@@ -15,6 +15,9 @@
       "src": "/api/(.*)",
       "dest": "/api/$1",
       "methods": ["GET", "POST", "OPTIONS"]
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
