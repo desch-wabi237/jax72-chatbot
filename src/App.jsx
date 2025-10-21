@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // --- Définitions et Constantes Globales ---
 const PROMO_CODE = "JAX72";
-const BOT_NAME = "JAX72PRONOSTIC";
+const BOT_NAME = "INTERPRONOSTIC";
 
 // Liens affiliés et sociaux
 const AFFILIATE_LINK_1XBET = "https://refpa58144.com/L?tag=d_4708581m_1573c_&site=4708581&ad=1573";
@@ -67,7 +67,7 @@ const App = () => {
     const [messages, setMessages] = useState([
         { 
             id: 1, 
-            text: `👋 Bonjour ! Je suis **${BOT_NAME}**, votre assistant expert pour les meilleurs bonus de paris sportifs. Je vous aide à obtenir le **BONUS MAXIMAL** sur 1xBet et Melbet grâce au code **${PROMO_CODE}**. 🎯`, 
+            text: `👋 Bonjour ! Je suis **${BOT_NAME}**, votre assistant expert pour les meilleurs bonus de paris sportifs. Je vous aide à obtenir le **BONUS MAXIMAL** sur 1xBet et Melbet grâce au code promo **${PROMO_CODE}**. 🎯`, 
             sender: 'bot', 
             isTyping: false 
         }
