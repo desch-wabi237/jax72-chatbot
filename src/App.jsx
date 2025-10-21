@@ -11,7 +11,7 @@ const WHATSAPP_LINK = "https://whatsapp.com/channel/0029VbBRgnhEawdxneZ5To1i";
 const TELEGRAM_LINK = "https://t.me/+tuopCS5aGEk3ZWZk";
 
 // La route API
-const API_URL = "https://jax72-chatbot-backend.onrender.com";
+const API_ROUTE = "https://jax72-chatbot-backend.onrender.com";
 
 // --- LOGIQUE D'INTÉGRATION GEMINI ---
 const getAiResponse = async (userQuery, maxRetries = 2) => {
