@@ -14,39 +14,54 @@ const TELEGRAM_LINK = "https://t.me/+tuopCS5aGEk3ZWZk";
 const API_ROUTE = "/api/chat";
 
 // --- LOGIQUE D'INTÉGRATION GEMINI ---
-const getAiResponse = async (userQuery, maxRetries = 3) => {
+const getAiResponse = async (userQuery, maxRetries = 2) => {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
+            console.log(`🔄 Tentative ${attempt + 1} pour: ${userQuery}`);
+            
             const response = await fetch(API_ROUTE, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify({ userQuery }) 
             });
 
+            console.log(`📨 Statut réponse: ${response.status}`);
+
             if (!response.ok) {
-                const errorText = await response.text();
+                let errorText;
+                try {
+                    errorText = await response.text();
+                } catch (e) {
+                    errorText = `Erreur HTTP: ${response.status}`;
+                }
                 throw new Error(errorText || `Erreur Serverless: ${response.status}`);
             }
 
             const text = await response.text();
+            console.log(`✅ Réponse reçue: ${text.substring(0, 100)}...`);
             
-            if (text) {
+            if (text && text.trim().length > 0) {
                 return text;
             } else {
                 throw new Error("Réponse de l'API vide.");
             }
 
         } catch (error) {
-            console.error("Tentative API échouée:", error);
+            console.error(`❌ Tentative ${attempt + 1} échouée:`, error.message);
+            
             if (attempt === maxRetries - 1) {
-                return `🚨 Erreur de connexion au service IA. Code promo : **${PROMO_CODE}**.`;
+                // Dernière tentative échouée
+                return `🚨 Service temporairement indisponible. \n\n🎯 **Code promo : ${PROMO_CODE}** \n\n🎰 Inscrivez-vous sur 1xBet : ${AFFILIATE_LINK_1XBET} \n⚽ Ou sur Melbet : ${AFFILIATE_LINK_MELBET}`;
             }
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Attente progressive
+            await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
         }
     }
-    return `🚨 Service IA temporairement indisponible. Code promo : **${PROMO_CODE}**.`;
 };
-
 // --- Composant Principal de l'Application ---
 const App = () => {
     const [messages, setMessages] = useState([
